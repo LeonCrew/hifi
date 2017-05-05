@@ -28,6 +28,8 @@
 #include "EntityTreeRenderer.h"
 #include "EntitiesRendererLogging.h"
 
+#include "../../ui/src/InfoView.h"
+
 const float METERS_TO_INCHES = 39.3701f;
 static uint32_t _currentWebCount { 0 };
 // Don't allow more than 100 concurrent web views
@@ -359,6 +361,29 @@ void RenderableWebEntityItem::handlePointerEvent(const PointerEvent& event) {
             break;
         }
 
+		if (event.getType() == PointerEvent::Press)
+		{
+			QUrl QML{ "InfoView.qml" };
+			QString NAME{ "InfoView" };
+
+			InfoView::registerType();
+
+			auto offscreenUi = DependencyManager::get<OffscreenUi>();
+			QString infoViewName(NAME);
+			offscreenUi->show(QML, NAME, [=](QQmlContext* context, QObject* newObject){
+				QQuickItem* item = dynamic_cast<QQuickItem*>(newObject);
+
+				/*Application *app = static_cast<Application*>(QCoreApplication::instance());
+				QSize windowSize = app->getPrimaryWindow()->size();*/
+				item->setSize(QSize(1920, 1080));
+
+				InfoView* newInfoView = newObject->findChild<InfoView*>();
+				Q_ASSERT(newInfoView);
+				newInfoView->parent()->setObjectName(infoViewName);
+				newInfoView->setUrl(_sourceUrl);
+			});
+		}
+
         QTouchEvent::TouchPoint point;
         point.setId(event.getID());
         point.setState(touchPointState);
@@ -375,6 +400,8 @@ void RenderableWebEntityItem::handlePointerEvent(const PointerEvent& event) {
         touchEvent->setTouchPointStates(touchPointState);
 
         QCoreApplication::postEvent(_webSurface->getWindow(), touchEvent);
+
+		
     }
 }
 
