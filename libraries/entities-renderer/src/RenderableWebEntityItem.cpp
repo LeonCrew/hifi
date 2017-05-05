@@ -361,28 +361,29 @@ void RenderableWebEntityItem::handlePointerEvent(const PointerEvent& event) {
             break;
         }
 
-		if (event.getType() == PointerEvent::Press)
-		{
-			QUrl QML{ "InfoView.qml" };
-			QString NAME{ "InfoView" };
+        if (event.getType() == PointerEvent::Press)
+        {
+            QUrl QML{ "InfoView.qml" };
+            QString NAME{ "InfoView" };
+            
+            InfoView::registerType();
+            
+            auto offscreenUi = DependencyManager::get<OffscreenUi>();
+            QString infoViewName(NAME);
+            offscreenUi->show(QML, NAME, [=](QQmlContext* context, QObject* newObject){
+                QQuickItem* item = dynamic_cast<QQuickItem*>(newObject);
+                
+                /* Use base window size
+                Application *app = static_cast<Application*>(QCoreApplication::instance());
+                QSize windowSize = app->getPrimaryWindow()->size();*/
+                item->setSize(QSize(1920, 1080));
 
-			InfoView::registerType();
-
-			auto offscreenUi = DependencyManager::get<OffscreenUi>();
-			QString infoViewName(NAME);
-			offscreenUi->show(QML, NAME, [=](QQmlContext* context, QObject* newObject){
-				QQuickItem* item = dynamic_cast<QQuickItem*>(newObject);
-
-				/*Application *app = static_cast<Application*>(QCoreApplication::instance());
-				QSize windowSize = app->getPrimaryWindow()->size();*/
-				item->setSize(QSize(1920, 1080));
-
-				InfoView* newInfoView = newObject->findChild<InfoView*>();
-				Q_ASSERT(newInfoView);
-				newInfoView->parent()->setObjectName(infoViewName);
-				newInfoView->setUrl(_sourceUrl);
-			});
-		}
+                InfoView* newInfoView = newObject->findChild<InfoView*>();
+                Q_ASSERT(newInfoView);
+                newInfoView->parent()->setObjectName(infoViewName);
+                newInfoView->setUrl(_sourceUrl);
+            });
+        }
 
         QTouchEvent::TouchPoint point;
         point.setId(event.getID());
