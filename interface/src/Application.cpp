@@ -2310,6 +2310,7 @@ void Application::paintGL() {
 
 
     {
+        // Check switch to stereo mode and ask "Place your phone into cardboard viewer."
         PROFILE_RANGE(render, "/mainRender");
         PerformanceTimer perfTimer("mainRender");
         renderArgs._boomOffset = boomOffset;
