@@ -48,6 +48,7 @@
 #include <QTemporaryDir>
 
 #include <gl/QOpenGLContextWrapper.h>
+#include <QSwipeGesture>
 
 #include <shared/GlobalAppProperties.h>
 #include <StatTracker.h>
@@ -3522,6 +3523,16 @@ void Application::touchEndEvent(QTouchEvent* event) {
 void Application::touchGestureEvent(QGestureEvent* event) {
     if (_touchscreenDevice && _touchscreenDevice->isActive()) {
         _touchscreenDevice->touchGestureEvent(event);
+    }
+    if (QGesture* swipe = event->gesture(Qt::SwipeGesture))	{
+        QSwipeGesture* swipeGesture = static_cast<QSwipeGesture*>(swipe);
+        if (swipeGesture->horizontalDirection() == QSwipeGesture::Left)	{
+            auto avatarManager = DependencyManager::get<AvatarManager>();
+            avatarManager->getMyAvatar()->getHead()->setOrientation(getMyAvatar()->getHead()->getOrientation() * glm::quat(glm::radians(glm::vec3(0.0f, -15.0f, 0.0f))));
+        } else if (swipeGesture->horizontalDirection() == QSwipeGesture::Right)	{
+            auto avatarManager = DependencyManager::get<AvatarManager>();
+            avatarManager->getMyAvatar()->getHead()->setOrientation(getMyAvatar()->getHead()->getOrientation() * glm::quat(glm::radians(glm::vec3(0.0f, 15.0f, 0.0f))));
+        }
     }
 }
 
