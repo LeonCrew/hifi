@@ -62,6 +62,14 @@
       android:screenOrientation="landscape"
       android:configChanges="screenSize|orientation|keyboardHidden|keyboard">
     </activity>
+
+    <activity
+      android:configChanges="orientation|uiMode|screenLayout|screenSize|smallestScreenSize|locale|fontScale|keyboard|keyboardHidden|navigation"
+      android:name="io.highfidelity.hifiinterface.SwitchActivity"
+      android:screenOrientation="landscape"
+      android:theme="@android:style/Theme.NoTitleBar.Fullscreen">
+    </activity>
+
     
     ${ANDROID_EXTRA_APPLICATION_XML}
   </application>
