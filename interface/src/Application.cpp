@@ -3425,6 +3425,23 @@ void Application::mouseDoublePressEvent(QMouseEvent* event) {
             getEntities()->mouseDoublePressEvent(&mappedEvent);
         }
     }
+    
+    PickRay ray = computePickRay(getMouse().x, getMouse().y);
+    RayToEntityIntersectionResult result;
+    OctreeElementPointer element;
+    EntityItemPointer intersectedEntity = NULL;
+    QVector<EntityItemID> includeIDs = QVector<EntityItemID>(); //unsure about this lists
+    QVector<EntityItemID> excludeIDs = QVector<EntityItemID>(); //unsure about this lists
+    
+    result.intersects = getEntities()->getTree()->findRayIntersection(ray.origin, ray.direction,
+                                                                      includeIDs, excludeIDs, true, true, true, element, result.distance, result.face, result.surfaceNormal,
+                                                                      (void**)&intersectedEntity, Octree::lockType::Lock, &result.accurate);
+    
+    if (result.intersects && intersectedEntity) {
+        result.entityID = intersectedEntity->getEntityItemID();
+        result.intersection = ray.origin + (ray.direction * result.distance);
+        getMyAvatar()->setPosition(result.intersection);
+    }
 
 
     // if one of our scripts have asked to capture this event, then stop processing it
