@@ -194,6 +194,7 @@ namespace MenuOption {
     const QString VisibleToFriends = "Friends";
     const QString VisibleToNoOne = "No one";
     const QString WorldAxes = "World Axes";
+    const QString CameraTopDown = "Top Down";
 }
 
 #endif // hifi_Menu_h

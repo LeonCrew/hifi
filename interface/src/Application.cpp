@@ -423,6 +423,7 @@ static const QString STATE_CAMERA_FIRST_PERSON = "CameraFirstPerson";
 static const QString STATE_CAMERA_THIRD_PERSON = "CameraThirdPerson";
 static const QString STATE_CAMERA_ENTITY = "CameraEntity";
 static const QString STATE_CAMERA_INDEPENDENT = "CameraIndependent";
+static const QString STATE_CAMERA_TOPDOWN = "CameraTopDown";
 static const QString STATE_SNAP_TURN = "SnapTurn";
 static const QString STATE_ADVANCED_MOVEMENT_CONTROLS = "AdvancedMovement";
 static const QString STATE_GROUNDED = "Grounded";
@@ -516,7 +517,7 @@ bool setupEssentials(int& argc, char** argv) {
     DependencyManager::set<AudioInjectorManager>();
     DependencyManager::set<MessagesClient>();
     controller::StateController::setStateVariables({ { STATE_IN_HMD, STATE_CAMERA_FULL_SCREEN_MIRROR,
-                                                             STATE_CAMERA_FIRST_PERSON, STATE_CAMERA_THIRD_PERSON, STATE_CAMERA_ENTITY, STATE_CAMERA_INDEPENDENT,
+                                                             STATE_CAMERA_FIRST_PERSON, STATE_CAMERA_THIRD_PERSON, STATE_CAMERA_ENTITY, STATE_CAMERA_INDEPENDENT, STATE_CAMERA_TOPDOWN,
                                                              STATE_SNAP_TURN, STATE_ADVANCED_MOVEMENT_CONTROLS, STATE_GROUNDED, STATE_NAV_FOCUSED } });
     DependencyManager::set<UserInputMapper>();
     DependencyManager::set<controller::ScriptingInterface, ControllerScriptingInterface>();
@@ -1156,6 +1157,9 @@ Application::Application(int& argc, char** argv, QElapsedTimer& startupTimer, bo
     });
     _applicationStateDevice->setInputVariant(STATE_CAMERA_INDEPENDENT, []() -> float {
         return qApp->getCamera()->getMode() == CAMERA_MODE_INDEPENDENT ? 1 : 0;
+    });
+    _applicationStateDevice->setInputVariant(STATE_CAMERA_TOPDOWN, []() -> float {
+        return qApp->getCamera()->getMode() == CAMERA_MODE_TOPDOWN ? 1 : 0;
     });
     _applicationStateDevice->setInputVariant(STATE_SNAP_TURN, []() -> float {
         return qApp->getMyAvatar()->getSnapTurn() ? 1 : 0;
@@ -2289,6 +2293,17 @@ void Application::paintGL() {
                     _myCamera.setPosition(cameraEntity->getPosition());
                 }
             }
+        } else if (_myCamera.getMode() == CAMERA_MODE_TOPDOWN) {
+            if (isHMDMode()) {
+                mat4 camMat = myAvatar->getSensorToWorldMatrix() * myAvatar->getHMDSensorMatrix();
+                _myCamera.setOrientation(glm::quat(0.7f, -0.7f, 0.0f, 0.0f));
+                _myCamera.setPosition(extractTranslation(camMat));
+                _myCamera.setOrientation(glm::quat_cast(camMat));
+            } else {
+                _myCamera.setOrientation(glm::quat(0.7f, -0.7f, 0.0f, 0.0f));
+                _myCamera.setPosition(myAvatar->getDefaultEyePosition());
+                _myCamera.setOrientation(myAvatar->getHead()->getCameraOrientation());
+            }
         }
         // Update camera position
         if (!isHMDMode()) {
@@ -3113,6 +3128,9 @@ void Application::keyPressEvent(QKeyEvent* event) {
                             break;
                         case CAMERA_MODE_ENTITY:
                             _returnFromFullScreenMirrorTo = MenuOption::CameraEntityMode;
+                            break;
+                        case CAMERA_MODE_TOPDOWN:
+                            _returnFromFullScreenMirrorTo = MenuOption::CameraTopDown;
                             break;
 
                         default:
@@ -4306,8 +4324,8 @@ void Application::cycleCamera() {
         menu->setIsOptionChecked(MenuOption::ThirdPerson, false);
         menu->setIsOptionChecked(MenuOption::FullscreenMirror, true);
 
-    } else if (menu->isOptionChecked(MenuOption::IndependentMode) || menu->isOptionChecked(MenuOption::CameraEntityMode)) {
-        // do nothing if in independent or camera entity modes
+    } else if (menu->isOptionChecked(MenuOption::IndependentMode) || menu->isOptionChecked(MenuOption::CameraEntityMode) || menu->isOptionChecked(MenuOption::CameraTopDown)) {
+        // do nothing if in independent, camera entity or top-down modes
         return;
     }
     cameraMenuChanged(); // handle the menu change
@@ -4337,6 +4355,10 @@ void Application::cameraMenuChanged() {
     } else if (Menu::getInstance()->isOptionChecked(MenuOption::CameraEntityMode)) {
         if (_myCamera.getMode() != CAMERA_MODE_ENTITY) {
             _myCamera.setMode(CAMERA_MODE_ENTITY);
+        }
+    } else if (Menu::getInstance()->isOptionChecked(MenuOption::CameraTopDown)) {
+        if (_myCamera.getMode() != CAMERA_MODE_TOPDOWN) {
+            _myCamera.setMode(CAMERA_MODE_TOPDOWN);
         }
     }
 }

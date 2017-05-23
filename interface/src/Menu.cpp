@@ -227,6 +227,11 @@ Menu::Menu() {
         MenuOption::FullscreenMirror, 0, // QML Qt::Key_H,
         false, qApp, SLOT(cameraMenuChanged())));
 
+    // View > Top Down
+    cameraModeGroup->addAction(addCheckableActionToQMenuAndActionHash(viewMenu,
+        MenuOption::CameraTopDown, 0,
+        false, qApp, SLOT(cameraMenuChanged())));
+    
     // View > Independent [advanced]
     cameraModeGroup->addAction(addCheckableActionToQMenuAndActionHash(viewMenu,
         MenuOption::IndependentMode, 0,
