@@ -49,6 +49,7 @@
 
 #include <gl/QOpenGLContextWrapper.h>
 #include <QSwipeGesture>
+#include <QTapAndHoldGesture>
 
 #include <shared/GlobalAppProperties.h>
 #include <StatTracker.h>
@@ -1176,12 +1177,12 @@ Application::Application(int& argc, char** argv, QElapsedTimer& startupTimer, bo
     });
 
     // Setup the _keyboardMouseDevice, _touchscreenDevice and the user input mapper with the default bindings
-#ifndef ANDROID
-    userInputMapper->registerDevice(_keyboardMouseDevice->getInputDevice());
+    if (_keyboardMouseDevice) {
+        userInputMapper->registerDevice(_keyboardMouseDevice->getInputDevice());
+    }
     if (_touchscreenDevice) {
         userInputMapper->registerDevice(_touchscreenDevice->getInputDevice());
     }
-#endif
     // if the _touchscreenDevice is not supported it will not be registered
 
     // force the model the look at the correct directory (weird order of operations issue)
@@ -2116,11 +2117,11 @@ void Application::initializeUi() {
     // This will set up the input plugins UI
     _activeInputPlugins.clear();
             foreach(auto inputPlugin, PluginManager::getInstance()->getInputPlugins()) {
-#ifndef ANDROID
+//#ifndef ANDROID
             if (KeyboardMouseDevice::NAME == inputPlugin->getName()) {
                 _keyboardMouseDevice = std::dynamic_pointer_cast<KeyboardMouseDevice>(inputPlugin);
             }
-#endif
+//#endif
             if (TouchscreenDevice::NAME == inputPlugin->getName()) {
                 _touchscreenDevice = std::dynamic_pointer_cast<TouchscreenDevice>(inputPlugin);
             }
@@ -3426,22 +3427,22 @@ void Application::mouseDoublePressEvent(QMouseEvent* event) {
         }
     }
     
-    PickRay ray = computePickRay(getMouse().x, getMouse().y);
-    RayToEntityIntersectionResult result;
-    OctreeElementPointer element;
-    EntityItemPointer intersectedEntity = NULL;
-    QVector<EntityItemID> includeIDs = QVector<EntityItemID>(); //unsure about this lists
-    QVector<EntityItemID> excludeIDs = QVector<EntityItemID>(); //unsure about this lists
-    
-    result.intersects = getEntities()->getTree()->findRayIntersection(ray.origin, ray.direction,
-                                                                      includeIDs, excludeIDs, true, true, true, element, result.distance, result.face, result.surfaceNormal,
-                                                                      (void**)&intersectedEntity, Octree::lockType::Lock, &result.accurate);
-    
-    if (result.intersects && intersectedEntity) {
-        result.entityID = intersectedEntity->getEntityItemID();
-        result.intersection = ray.origin + (ray.direction * result.distance);
-        getMyAvatar()->setPosition(result.intersection);
-    }
+//    PickRay ray = computePickRay(getMouse().x, getMouse().y);
+//    RayToEntityIntersectionResult result;
+//    OctreeElementPointer element;
+//    EntityItemPointer intersectedEntity = NULL;
+//    QVector<EntityItemID> includeIDs = QVector<EntityItemID>(); //unsure about this lists
+//    QVector<EntityItemID> excludeIDs = QVector<EntityItemID>(); //unsure about this lists
+//    
+//    result.intersects = getEntities()->getTree()->findRayIntersection(ray.origin, ray.direction,
+//                                                                      includeIDs, excludeIDs, true, true, true, element, result.distance, result.face, result.surfaceNormal,
+//                                                                      (void**)&intersectedEntity, Octree::lockType::Lock, &result.accurate);
+//    
+//    if (result.intersects && intersectedEntity) {
+//        result.entityID = intersectedEntity->getEntityItemID();
+//        result.intersection = ray.origin + (ray.direction * result.distance);
+//        getMyAvatar()->setPosition(result.intersection);
+//    }
 
 
     // if one of our scripts have asked to capture this event, then stop processing it
@@ -3568,6 +3569,24 @@ void Application::touchGestureEvent(QGestureEvent* event) {
         } else if (swipeGesture->horizontalDirection() == QSwipeGesture::Right)	{
             auto avatarManager = DependencyManager::get<AvatarManager>();
             avatarManager->getMyAvatar()->getHead()->setOrientation(getMyAvatar()->getHead()->getOrientation() * glm::quat(glm::radians(glm::vec3(0.0f, 15.0f, 0.0f))));
+        }
+    }
+    if (QGesture* tapAndHold = event->gesture(Qt::TapAndHoldGesture))	{
+        QTapAndHoldGesture* tapAndHoldGesture = static_cast<QTapAndHoldGesture*>(tapAndHold);
+        PickRay ray = computePickRay(tapAndHoldGesture->position().x(), tapAndHoldGesture->position().y());
+        RayToEntityIntersectionResult result;
+        OctreeElementPointer element;
+        EntityItemPointer intersectedEntity = NULL;
+        QVector<EntityItemID> includeIDs = QVector<EntityItemID>(); //unsure about this lists
+        QVector<EntityItemID> excludeIDs = QVector<EntityItemID>(); //unsure about this lists
+
+        result.intersects = getEntities()->getTree()->findRayIntersection(ray.origin, ray.direction,
+                                                                          includeIDs, excludeIDs, true, true, true, element, result.distance, result.face, result.surfaceNormal,
+                                                                          (void**)&intersectedEntity, Octree::lockType::Lock, &result.accurate);
+        if (result.intersects && intersectedEntity) {
+            result.entityID = intersectedEntity->getEntityItemID();
+            result.intersection = ray.origin + (ray.direction * result.distance);
+            getMyAvatar()->setPosition(result.intersection);
         }
     }
 }
