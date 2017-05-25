@@ -2295,10 +2295,10 @@ void Application::paintGL() {
             }
         } else if (_myCamera.getMode() == CAMERA_MODE_TOPDOWN) {
             if (isHMDMode()) {
-                mat4 camMat = myAvatar->getSensorToWorldMatrix() * myAvatar->getHMDSensorMatrix();
-                _myCamera.setOrientation(glm::quat(0.7f, -0.7f, 0.0f, 0.0f));
-                _myCamera.setPosition(extractTranslation(camMat));
-                _myCamera.setOrientation(glm::quat_cast(camMat));
+                auto hmdWorldMat = myAvatar->getSensorToWorldMatrix() * myAvatar->getHMDSensorMatrix();
+                _myCamera.setOrientation(glm::normalize(glm::quat_cast(hmdWorldMat)) * glm::quat(0.7f, -0.7f, 0.0f, 0.0f));
+                _myCamera.setPosition(extractTranslation(hmdWorldMat) + myAvatar->getScale() * myAvatar->getBoomLength() * IDENTITY_UP);
+                
             } else {
                 _myCamera.setOrientation(glm::quat(0.7f, -0.7f, 0.0f, 0.0f));
                 _myCamera.setPosition(myAvatar->getDefaultEyePosition());
